@@ -1,37 +1,64 @@
+#repos:
+#  - repo: local
+#    hooks:
+#      - id: pyupgrade
+#        name: pyupgrade
+#        entry: pyupgrade
+#        args: [
+#          "--py311-plus"
+#        ]
+#        language: system
+#        types:
+#          - python
+#
+#      - id: autoflake
+#        name: autoflake
+#        entry: autoflake
+#        language: system
+#        exclude: |
+#          (?x)^(
+#              .*/__init__.py
+#          )$
+#        types:
+#          - python
+#
+#      - id: black
+#        name: black
+#        entry: black
+#        language: system
+#        types:
+#          - python
+#
+#      - id: flake8
+#        name: flake8
+#        entry: flake8
+#        language: system
+#        types:
+#          - python
+
 repos:
-  - repo: local
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.0
     hooks:
       - id: pyupgrade
-        name: pyupgrade
-        entry: pyupgrade
-        args: [
-          "--py311-plus"
-        ]
-        language: system
-        types:
-          - python
+        args: [--py311-plus]
 
-      - id: autoflake
-        name: autoflake
-        entry: autoflake
-        language: system
-        exclude: |
-          (?x)^(
-              .*/__init__.py
-          )$
-        types:
-          - python
-
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
       - id: black
-        name: black
-        entry: black
-        language: system
-        types:
-          - python
 
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
+    hooks:
+      - id: autoflake
+        args:
+          - --remove-all-unused-imports
+          - --remove-unused-variables
+          - --in-place
+          - --exclude=__init__.py
+
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
       - id: flake8
-        name: flake8
-        entry: flake8
-        language: system
-        types:
-          - python
