@@ -1,4 +1,4 @@
-**brain_ua_project_bs4 on the Django framework**
+**brain_ua_project_selenium on the Django framework**
 ---
 * This project parses the website brain.com.ua *
 * For parsing, dependencies of selenium is used
