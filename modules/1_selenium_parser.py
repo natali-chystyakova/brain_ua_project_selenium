@@ -11,12 +11,13 @@ from selenium.webdriver.common.by import By
 # from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 
-# from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver import ActionChains
 
 from selenium.common.exceptions import NoSuchElementException
 from load_django import *  # noqa: F403,F401
-
+from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.common.keys import Keys
 
 from parser_app.models import Product
 
@@ -27,15 +28,16 @@ def parse():
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     # options.add_argument("--headless=new")   # браузер в фоне (безгловый ржим)
-
+    options.add_argument("window-size=1400,900")  # 👉 фиксируем ширину и высоту окна
     # создаем обьект - установка драйвера, открытиеи закрытие драйвера
     service = Service(ChromeDriverManager().install())
 
     driver = webdriver.Chrome(service=service, options=options)  # обьект драйвера и чем будет управляться
+    # 👉 фиксируем ширину и высоту окна
 
     try:
         # Открваем страницу по url
-        driver.get("https://brain.com.ua/ ")
+        driver.get("https://brain.com.ua/")
 
         # получение title (тег в header)
         current_title = driver.title
@@ -47,18 +49,28 @@ def parse():
 
         # search_input = driver.find_element(By.CSS_SELECTOR, "input.quick-search-input")
 
-        search_input = driver.find_element(By.XPATH, "//input[contains(@class, 'quick-search-input')]")
-        print(search_input)
+        wait = WebDriverWait(driver, 10)
 
-        # Вводим текст по буквам
-        actions = ActionChains(driver)
-        actions.move_to_element(search_input).click()
-        for c in "Apple iPhone 15 128GB Black":
-            actions.send_keys(c)
-            actions.pause(0.05)  # для иммитации ввода
-        actions.perform()
+        # 1. поле поиска
+        try:
+            search_input = wait.until(
+                EC.visibility_of_element_located((By.XPATH, "(//input[contains(@class,'quick-search-input')])[2]"))
+            )
+            search_input.click()
 
-        print(search_input.get_attribute("value"))  # проверка записи поля
+            # ввод с задержкой
+            actions = ActionChains(driver)
+            for c in "Apple iPhone 15 128GB Black":
+                actions.send_keys(c)
+                actions.pause(0.05)
+            actions.perform()
+
+            # ставим курсор в конец
+            search_input.send_keys(Keys.END)
+        except TimeoutException:
+            print("Поле пошуку не знайдено")
+
+        # print(search_input.get_attribute("value"))  # проверка записи поля
 
         # #введем текст в строку поиска все вместе
         # search_input.send_keys("Apple iPhone 15 128GB Black")
@@ -66,21 +78,24 @@ def parse():
         # без нажатия кнопки срабатывает
         # search_input.send_keys("Apple iPhone 15 128GB Black", Keys.ENTER)
 
-        # если нужно именно нажать кнопку
-        def wait_for_block(driver):
-            # Найти в HTML элемент <div class="qsr-block">, зять его CSS-свойство display
-            js = "return document.querySelector('div.qsr-block').style.display"
-            value = driver.execute_script(js)
-            return value == "block"
+        # 2.кнопка Поиск
+        try:
+            search_form = wait.until(
+                EC.visibility_of_element_located((By.XPATH, "(//form[contains(@class,'qsr-form')])"))
+            )
 
-        wait = WebDriverWait(driver, 10)
-        wait.until(wait_for_block)
+            search_button = search_form.find_element(By.XPATH, ".//input[contains(@class,'qsr-submit')]")
 
-        # найдём кнопку <input class="qsr-submit"> и нажимаем
-        driver.execute_script("document.querySelector('input.qsr-submit').click()")
-        # search_submit = driver.find_element(By.XPATH, "//input[contains(@class, 'qsr-submit')]")
-        # #search_submit.click()
-        # print(search_submit)
+            wait.until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "(//form[contains(@class,'qsr-form')])//input[contains(@class,'qsr-submit')]")
+                )
+            )
+
+            search_button.click()
+
+        except TimeoutException:
+            print("Форма пошуку або кнопка Знайти не знайденi")
 
         # #заходим на первый елемент массива(карточек)
         # items = driver.find_elements(By.CSS_SELECTOR, "div.br-pcg-product-wrapper a")
